@@ -7,9 +7,9 @@ class Env {
       if (url.isNotEmpty) {
         return url;
       }
-      return 'http://localhost:5070/api/v1';
+      return 'https://obour.digitalelite.com.sa/api/v1';
     } catch (_) {
-      return 'http://localhost:5070/api/v1';
+      return 'https://obour.digitalelite.com.sa/api/v1';
     }
   }
 

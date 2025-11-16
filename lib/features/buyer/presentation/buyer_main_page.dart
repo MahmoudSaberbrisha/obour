@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/theme/theme_mode.dart';
 import 'buyer_home_page.dart';
 import 'buyer_orders_page.dart';
 import '../../auth/presentation/profile_page.dart';
@@ -23,6 +25,11 @@ class _BuyerMainPageState extends State<BuyerMainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
+
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
@@ -30,8 +37,8 @@ class _BuyerMainPageState extends State<BuyerMainPage> {
           boxShadow: [
             BoxShadow(
               offset: const Offset(0, -1),
-              blurRadius: 4,
-              color: Colors.black.withOpacity(0.05),
+              blurRadius: isDark ? 10 : 4,
+              color: Colors.black.withOpacity(isDark ? 0.4 : 0.08),
             ),
           ],
         ),
@@ -45,30 +52,30 @@ class _BuyerMainPageState extends State<BuyerMainPage> {
             },
             height: 70,
             elevation: 0,
-            backgroundColor: Colors.white,
-            indicatorColor: Theme.of(
-              context,
-            ).colorScheme.primary.withOpacity(0.15),
+            backgroundColor: colors.surface.withOpacity(isDark ? 0.9 : 1),
+            indicatorColor: colors.primary.withOpacity(0.18),
             destinations: [
               NavigationDestination(
-                icon: const Icon(Icons.home_outlined),
-                selectedIcon: const Icon(Icons.home),
-                label: 'الرئيسية',
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: l10n.translate('navHome'),
               ),
               NavigationDestination(
-                icon: const Icon(Icons.shopping_bag_outlined),
-                selectedIcon: const Icon(Icons.shopping_bag),
-                label: 'الطلبات',
+                icon: Icon(Icons.shopping_bag_outlined),
+                selectedIcon: Icon(Icons.shopping_bag),
+                label: l10n.translate('navBuyerOrders'),
               ),
               NavigationDestination(
-                icon: const Icon(Icons.person_outline),
-                selectedIcon: const Icon(Icons.person),
-                label: 'الملف الشخصي',
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: l10n.translate('navBuyerProfile'),
               ),
             ],
           ),
         ),
       ),
+      floatingActionButton: const ThemeModeToggleFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 }

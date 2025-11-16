@@ -19,6 +19,46 @@ class ModernCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final resolvedBackground =
+        backgroundColor ?? colors.surface.withOpacity(isDark ? 0.82 : 0.55);
+    final borderColor = isDark
+        ? colors.outlineVariant.withOpacity(0.35)
+        : Colors.white.withValues(alpha: 0.35);
+    final shadowColor = isDark
+        ? Colors.black.withOpacity(0.45)
+        : Colors.black.withValues(alpha: 0.07);
+    final backgroundBrightness =
+        ThemeData.estimateBrightnessForColor(resolvedBackground);
+    final needsContrastBoost =
+        theme.brightness == Brightness.dark && backgroundBrightness == Brightness.light;
+    final contrastedTextColor = needsContrastBoost
+        ? Colors.black87
+        : theme.textTheme.bodyMedium?.color ?? colors.onSurface;
+    ThemeData? contrastTheme;
+    Widget? contrastWrappedChild;
+    if (needsContrastBoost) {
+      final adjustedTextTheme = theme.textTheme.apply(
+        bodyColor: contrastedTextColor,
+        displayColor: contrastedTextColor,
+      );
+      contrastTheme = theme.copyWith(
+        textTheme: adjustedTextTheme,
+        primaryTextTheme: adjustedTextTheme,
+      );
+      contrastWrappedChild = Theme(
+        data: contrastTheme,
+        child: DefaultTextStyle.merge(
+          style: TextStyle(color: contrastedTextColor),
+          child: child,
+        ),
+      );
+    }
+
+    final Widget resolvedChild = contrastWrappedChild ?? child;
+
     return Container(
       margin: margin ?? const EdgeInsets.only(bottom: 12),
       child: ClipRRect(
@@ -27,12 +67,12 @@ class ModernCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
           child: Container(
             decoration: BoxDecoration(
-              color: (backgroundColor ?? Colors.white).withValues(alpha: 0.55),
+              color: resolvedBackground,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+              border: Border.all(color: borderColor),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.07),
+                  color: shadowColor,
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -45,7 +85,7 @@ class ModernCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 child: Padding(
                   padding: padding ?? const EdgeInsets.all(16),
-                  child: child,
+                  child: resolvedChild,
                 ),
               ),
             ),
@@ -61,6 +101,7 @@ class AnimatedStatCard extends StatelessWidget {
   final String title;
   final String value;
   final Color color;
+  final Color? trendColor;
   final String? trend;
 
   const AnimatedStatCard({
@@ -69,11 +110,16 @@ class AnimatedStatCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.color,
+    this.trendColor,
     this.trend,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final onSurfaceVariant = colors.onSurfaceVariant;
+    final resolvedTrendColor = trendColor ?? colors.primary;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 600),
@@ -142,18 +188,19 @@ class AnimatedStatCard extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+              style: (Theme.of(context).textTheme.headlineMedium ??
+                      const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                      ))
+                  .copyWith(color: color),
             ),
             const SizedBox(height: 4),
             Text(
               title,
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey.shade600,
+                color: onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),

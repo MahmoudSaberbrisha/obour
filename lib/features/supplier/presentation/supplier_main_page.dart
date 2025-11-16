@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/theme/theme_mode.dart';
 import 'supplier_home_page.dart';
 import 'supplier_providers.dart';
 import '../../../core/widgets/modern_card.dart';
@@ -26,17 +28,22 @@ class _SupplierMainPageState extends State<SupplierMainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
+
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
-        padding: EdgeInsets.all(10),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               offset: const Offset(0, -1),
-              blurRadius: 4,
-              color: Colors.black.withOpacity(0.05),
+              blurRadius: isDark ? 12 : 6,
+              color: Colors.black.withOpacity(isDark ? 0.5 : 0.1),
             ),
           ],
         ),
@@ -51,35 +58,35 @@ class _SupplierMainPageState extends State<SupplierMainPage> {
             },
             height: 80,
             elevation: 10,
-            backgroundColor: Colors.white,
-            indicatorColor: Theme.of(
-              context,
-            ).colorScheme.primary.withOpacity(0.15),
-            destinations: const [
+            backgroundColor: colors.surface.withOpacity(isDark ? 0.9 : 1),
+            indicatorColor: colors.primary.withOpacity(0.18),
+            destinations: [
               NavigationDestination(
                 icon: Icon(Icons.dashboard_outlined),
                 selectedIcon: Icon(Icons.dashboard),
-                label: 'لوحة التحكم',
+                label: l10n.translate('navSupplierDashboard'),
               ),
               NavigationDestination(
                 icon: Icon(Icons.inventory_2_outlined),
                 selectedIcon: Icon(Icons.inventory_2),
-                label: 'المنتجات',
+                label: l10n.translate('navSupplierProducts'),
               ),
               NavigationDestination(
                 icon: Icon(Icons.shopping_bag_outlined),
                 selectedIcon: Icon(Icons.shopping_bag),
-                label: 'الطلبات',
+                label: l10n.translate('navSupplierOrders'),
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline),
                 selectedIcon: Icon(Icons.person),
-                label: 'الملف الشخصي',
+                label: l10n.translate('navSupplierProfile'),
               ),
             ],
           ),
         ),
       ),
+      floatingActionButton: const ThemeModeToggleFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 }
@@ -91,29 +98,31 @@ class _ProductsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final productsAsync = ref.watch(supplierProductsProvider);
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('المنتجات'),
+        title: Text(l10n.translate('labelProducts')),
       ),
       body: productsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-            'خطأ في تحميل المنتجات',
+            l10n.translate('commonLoadProductsError'),
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.red),
+            ).textTheme.bodyMedium?.copyWith(color: colors.error),
           ),
         ),
         data: (products) {
           if (products.isEmpty) {
             return Center(
               child: Text(
-                'لا توجد منتجات',
+                l10n.translate('commonNoProducts'),
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                ).textTheme.bodyMedium
+                    ?.copyWith(color: colors.onSurfaceVariant),
               ),
             );
           }
@@ -192,7 +201,7 @@ class _ProductsPage extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '${price.toStringAsFixed(2)} ر.س',
+                                  l10n.formatCurrency(price),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 const SizedBox(width: 12),
@@ -203,7 +212,10 @@ class _ProductsPage extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'المخزون: $stock',
+                                  l10n.translate(
+                                    'stockWithCount',
+                                    params: {'count': stock.toString()},
+                                  ),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
@@ -226,7 +238,7 @@ class _ProductsPage extends ConsumerWidget {
                             ),
                           ),
                           child: Text(
-                            _statusTextArLocal(status),
+                            _localizedProductStatus(context, status),
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(color: colors.primary),
                           ),
@@ -244,16 +256,17 @@ class _ProductsPage extends ConsumerWidget {
   }
 }
 
-String _statusTextArLocal(String status) {
+String _localizedProductStatus(BuildContext context, String status) {
+  final l10n = context.l10n;
   switch (status.toLowerCase()) {
     case 'active':
-      return 'نشط';
+      return l10n.translate('statusActive');
     case 'inactive':
-      return 'غير نشط';
+      return l10n.translate('statusInactive');
     case 'out_of_stock':
-      return 'نفد المخزون';
+      return l10n.translate('statusOutOfStock');
     case 'discontinued':
-      return 'متوقف';
+      return l10n.translate('statusDiscontinued');
     default:
       return status;
   }
@@ -279,30 +292,32 @@ class _OrdersPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final ordersAsync = ref.watch(supplierOrdersProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('الطلبات'),
+        title: Text(l10n.translate('labelOrders')),
       ),
       body: ordersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-            'خطأ في تحميل الطلبات',
+            l10n.translate('commonLoadOrdersError'),
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.red),
+            ).textTheme.bodyMedium?.copyWith(color: colors.error),
           ),
         ),
         data: (orders) {
           if (orders.isEmpty) {
             return Center(
               child: Text(
-                'لا توجد طلبات',
+                l10n.translate('commonNoOrders'),
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                ).textTheme.bodyMedium
+                    ?.copyWith(color: colors.onSurfaceVariant),
               ),
             );
           }
@@ -317,7 +332,8 @@ class _OrdersPage extends ConsumerWidget {
               final date = order['createdAt'] ?? order['order_date'];
               final price = order['total_price'];
               final buyerName =
-                  order['Buyer']?['name']?.toString() ?? 'عميل غير محدد';
+                  order['Buyer']?['name']?.toString() ??
+                  l10n.translate('commonUnknownCustomer');
 
               return ModernCard(
                 child: InkWell(
@@ -331,11 +347,20 @@ class _OrdersPage extends ConsumerWidget {
                         color: colors.primary,
                       ),
                     ),
-                    title: Text('طلب #$orderId'),
+                    title: Text(
+                        l10n.translate(
+                          'orderNumberFormatted',
+                          params: {'number': orderId.toString()},
+                        )),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('العميل: $buyerName'),
+                        Text(
+                          l10n.translate(
+                            'customerWithName',
+                            params: {'name': buyerName},
+                          ),
+                        ),
                         if (date != null)
                           Text(
                             _formatOrderDate(date.toString()),
@@ -343,7 +368,14 @@ class _OrdersPage extends ConsumerWidget {
                           ),
                         if (price != null)
                           Text(
-                            'المبلغ: ${_parseDouble(price).toStringAsFixed(2)} ر.س',
+                            l10n.translate(
+                              'amountWithValue',
+                              params: {
+                                'amount': l10n.formatCurrency(
+                                  _parseDouble(price),
+                                ),
+                              },
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                       ],
@@ -361,7 +393,7 @@ class _OrdersPage extends ConsumerWidget {
                         ),
                       ),
                       child: Text(
-                        _statusTextArLocal(status),
+                        _localizedOrderStatus(context, status),
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: colors.primary,
                           fontSize: 10,
@@ -380,19 +412,20 @@ class _OrdersPage extends ConsumerWidget {
     );
   }
 
-  String _statusTextArLocal(String status) {
+  String _localizedOrderStatus(BuildContext context, String status) {
+    final l10n = context.l10n;
     switch (status.toLowerCase()) {
       case 'pending':
-        return 'قيد الانتظار';
+        return l10n.translate('statusPending');
       case 'processing':
-        return 'قيد المعالجة';
+        return l10n.translate('statusProcessing');
       case 'completed':
       case 'delivered':
-        return 'مكتمل';
+        return l10n.translate('statusCompleted');
       case 'cancelled':
-        return 'ملغي';
+        return l10n.translate('statusCancelled');
       default:
-        return status;
+        return l10n.translate('statusUnknown');
     }
   }
 
@@ -413,6 +446,7 @@ class _OrdersPage extends ConsumerWidget {
 
   void _showOrderDetails(BuildContext context, Map<String, dynamic> order) {
     final colors = Theme.of(context).colorScheme;
+  final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
@@ -432,7 +466,7 @@ class _OrdersPage extends ConsumerWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withOpacity(isDark ? 0.5 : 0.12),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -455,7 +489,7 @@ class _OrdersPage extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'تفاصيل الطلب',
+                            context.l10n.translate('labelOrderDetails'),
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
@@ -471,36 +505,42 @@ class _OrdersPage extends ConsumerWidget {
                       const SizedBox(height: 20),
                       _detailCard(
                         context,
-                        'رقم الطلب',
+                        context.l10n.translate('labelOrderNumber'),
                         '${order['order_number'] ?? order['id']}',
                         Icons.receipt_long_rounded,
                       ),
                       const SizedBox(height: 12),
                       _detailCard(
                         context,
-                        'العميل',
-                        order['Buyer']?['name'] ?? 'غير محدد',
+                        context.l10n.translate('labelCustomer'),
+                        order['Buyer']?['name'] ??
+                            context.l10n.translate('commonUnknownCustomer'),
                         Icons.person_rounded,
                       ),
                       const SizedBox(height: 12),
                       _detailCard(
                         context,
-                        'الحالة',
-                        _statusTextArLocal(order['status']?.toString() ?? ''),
+                        context.l10n.translate('labelStatus'),
+                        _localizedOrderStatus(
+                          context,
+                          order['status']?.toString() ?? '',
+                        ),
                         Icons.info_rounded,
                       ),
                       const SizedBox(height: 12),
                       _detailCard(
                         context,
-                        'المبلغ',
-                        '${_parseDouble(order['total_price']).toStringAsFixed(2)} ر.س',
+                        context.l10n.translate('labelAmount'),
+                        context.l10n.formatCurrency(
+                          _parseDouble(order['total_price']),
+                        ),
                         Icons.attach_money_rounded,
                       ),
                       if (order['createdAt'] != null) ...[
                         const SizedBox(height: 12),
                         _detailCard(
                           context,
-                          'التاريخ',
+                          context.l10n.translate('labelCreatedAt'),
                           _formatOrderDate(order['createdAt'].toString()),
                           Icons.calendar_today_rounded,
                         ),
@@ -509,7 +549,7 @@ class _OrdersPage extends ConsumerWidget {
                         const SizedBox(height: 12),
                         _detailCard(
                           context,
-                          'رقم الجوال',
+                          context.l10n.translate('labelPhone'),
                           order['Buyer']['jwal'],
                           Icons.phone_rounded,
                         ),
@@ -532,6 +572,7 @@ class _OrdersPage extends ConsumerWidget {
     IconData icon,
   ) {
     final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -582,6 +623,7 @@ class _ProductsPageHelper {
     Map<String, dynamic> product,
   ) {
     final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final name = product['name']?.toString() ?? '-';
     final sku = product['sku']?.toString() ?? '-';
     final price = product['price'];
@@ -590,7 +632,8 @@ class _ProductsPageHelper {
     final minStock = product['min_stock_level'] ?? 0;
     final status = product['status']?.toString() ?? 'active';
     final desc = product['description']?.toString();
-    final categoryName = product['Category']?['name']?.toString() ?? 'غير محدد';
+    final categoryName = product['Category']?['name']?.toString() ??
+        context.l10n.translate('notAvailable');
 
     showModalBottomSheet(
       context: context,
@@ -610,7 +653,7 @@ class _ProductsPageHelper {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withOpacity(isDark ? 0.5 : 0.12),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -633,7 +676,7 @@ class _ProductsPageHelper {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'تفاصيل المنتج',
+                            context.l10n.translate('labelProductDetails'),
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
@@ -649,7 +692,7 @@ class _ProductsPageHelper {
                       const SizedBox(height: 20),
                       _detailCard(
                         context,
-                        'اسم المنتج',
+                        context.l10n.translate('labelProductName'),
                         name,
                         Icons.inventory_2_rounded,
                       ),
@@ -658,43 +701,44 @@ class _ProductsPageHelper {
                       const SizedBox(height: 12),
                       _detailCard(
                         context,
-                        'السعر',
-                        '${_parseDouble(price).toStringAsFixed(2)} ر.س',
+                        context.l10n.translate('labelPrice'),
+                        context.l10n
+                            .formatCurrency(_parseDouble(price)),
                         Icons.attach_money_rounded,
                       ),
                       const SizedBox(height: 12),
                       _detailCard(
                         context,
-                        'المخزون',
-                        '$stock',
+                        context.l10n.translate('labelStock'),
+                        stock.toString(),
                         Icons.storage_rounded,
                       ),
                       const SizedBox(height: 12),
                       _detailCard(
                         context,
-                        'الحد الأدنى',
-                        '$minStock',
+                        context.l10n.translate('labelMinStock'),
+                        minStock.toString(),
                         Icons.trending_down_rounded,
                       ),
                       const SizedBox(height: 12),
                       _detailCard(
                         context,
-                        'التصنيف',
+                        context.l10n.translate('labelCategory'),
                         categoryName,
                         Icons.category_rounded,
                       ),
                       const SizedBox(height: 12),
                       _detailCard(
                         context,
-                        'الحالة',
-                        _statusTextArLocal(status),
+                        context.l10n.translate('labelStatus'),
+                        _localizedProductStatus(context, status),
                         Icons.info_rounded,
                       ),
                       if (desc != null && desc.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _detailCard(
                           context,
-                          'الوصف',
+                          context.l10n.translate('labelDescription'),
                           desc,
                           Icons.description_rounded,
                         ),
@@ -708,21 +752,6 @@ class _ProductsPageHelper {
         );
       },
     );
-  }
-
-  static String _statusTextArLocal(String status) {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return 'نشط';
-      case 'inactive':
-        return 'غير نشط';
-      case 'out_of_stock':
-        return 'نفد المخزون';
-      case 'discontinued':
-        return 'متوقف';
-      default:
-        return status;
-    }
   }
 
   static double _parseDouble(dynamic value) {

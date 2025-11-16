@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/localization/app_localizations.dart';
+import 'core/localization/locale_notifier.dart';
 import 'core/router/routes.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_mode.dart';
 import 'features/onboarding/presentation/onboarding_page.dart';
 import 'features/splash/presentation/splash_page.dart';
 import 'features/auth/presentation/login_page.dart';
@@ -25,17 +28,32 @@ class App extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    final locale = ref.watch(localeProvider);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Obour',
       theme: AppTheme.light,
-      locale: const Locale('ar'),
-      supportedLocales: const [Locale('ar'), Locale('en')],
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      localeResolutionCallback: (deviceLocale, supportedLocales) {
+        if (deviceLocale == null) return const Locale('ar');
+        for (final locale in supportedLocales) {
+          if (locale.languageCode == deviceLocale.languageCode) {
+            return locale;
+          }
+        }
+        return const Locale('ar');
+      },
       initialRoute: Routes.splash,
       routes: {
         Routes.splash: (_) => const SplashPage(),

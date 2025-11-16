@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/theme/theme_mode.dart';
 import 'carrier_home_page.dart';
 import '../../auth/presentation/profile_page.dart';
 
@@ -20,6 +22,11 @@ class _CarrierMainPageState extends State<CarrierMainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
+
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
@@ -27,8 +34,8 @@ class _CarrierMainPageState extends State<CarrierMainPage> {
           boxShadow: [
             BoxShadow(
               offset: const Offset(0, -1),
-              blurRadius: 4,
-              color: Colors.black.withOpacity(0.05),
+              blurRadius: isDark ? 10 : 4,
+              color: Colors.black.withOpacity(isDark ? 0.4 : 0.08),
             ),
           ],
         ),
@@ -42,30 +49,30 @@ class _CarrierMainPageState extends State<CarrierMainPage> {
             },
             height: 70,
             elevation: 0,
-            backgroundColor: Colors.white,
-            indicatorColor: Theme.of(
-              context,
-            ).colorScheme.primary.withOpacity(0.15),
-            destinations: const [
+            backgroundColor: colors.surface.withOpacity(isDark ? 0.9 : 1),
+            indicatorColor: colors.primary.withOpacity(0.18),
+            destinations: [
               NavigationDestination(
                 icon: Icon(Icons.local_shipping_outlined),
                 selectedIcon: Icon(Icons.local_shipping),
-                label: 'الشحنات',
+                label: l10n.translate('navCarrierShipments'),
               ),
               NavigationDestination(
                 icon: Icon(Icons.history_outlined),
                 selectedIcon: Icon(Icons.history),
-                label: 'السجل',
+                label: l10n.translate('navCarrierHistory'),
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline),
                 selectedIcon: Icon(Icons.person),
-                label: 'الملف الشخصي',
+                label: l10n.translate('navCarrierProfile'),
               ),
             ],
           ),
         ),
       ),
+      floatingActionButton: const ThemeModeToggleFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 }

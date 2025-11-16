@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/localization/locale_notifier.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/router/routes.dart';
 import '../data/auth_repository.dart';
@@ -43,30 +45,62 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider);
+    final l10n = context.l10n;
+    final locale = ref.watch(localeProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الملف الشخصي'),
+        title: Text(l10n.translate('profileTitle')),
         actions: [
+          PopupMenuButton<Locale>(
+            tooltip: l10n.translate('profileLanguageTooltip'),
+            icon: const Icon(Icons.language),
+            onSelected: (selectedLocale) {
+              ref.read(localeProvider.notifier).setLocale(selectedLocale);
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: const Locale('ar'),
+                child: Row(
+                  children: [
+                    if (locale.languageCode == 'ar')
+                      const Icon(Icons.check, size: 16),
+                    if (locale.languageCode == 'ar')
+                      const SizedBox(width: 8),
+                    Text(l10n.translate('languageArabic')),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: const Locale('en'),
+                child: Row(
+                  children: [
+                    if (locale.languageCode == 'en')
+                      const Icon(Icons.check, size: 16),
+                    if (locale.languageCode == 'en')
+                      const SizedBox(width: 8),
+                    Text(l10n.translate('languageEnglish')),
+                  ],
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
               final shouldLogout = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('تسجيل الخروج'),
-                  content: const Text('هل أنت متأكد من تسجيل الخروج؟'),
+                  title: Text(l10n.translate('profileLogout')),
+                  content: Text(l10n.translate('profileLogoutQuestion')),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(ctx).pop(false),
-                      child: const Text('إلغاء'),
+                      child: Text(l10n.translate('profileCancel')),
                     ),
                     TextButton(
                       onPressed: () => Navigator.of(ctx).pop(true),
-                      child: const Text(
-                        'تسجيل الخروج',
-                        style: TextStyle(color: Colors.red),
-                      ),
+                      child: Text(l10n.translate('profileConfirmLogout')),
                     ),
                   ],
                 ),
@@ -81,38 +115,37 @@ class ProfilePage extends ConsumerWidget {
                 }
               }
             },
-            tooltip: 'تسجيل الخروج',
+            tooltip: l10n.translate('profileLogoutTooltip'),
           ),
         ],
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: profileAsync.when(
-          data: (data) => DefaultTabController(
-            length: 2,
-            child: Column(
-              children: [
-                const TabBar(
-                  labelColor: Colors.green,
-                  unselectedLabelColor: Colors.grey,
-                  indicatorColor: Colors.green,
-                  tabs: [
-                    Tab(text: 'بيانات الحساب'),
-                    Tab(text: 'بيانات الكيان'),
-                  ],
+      body: profileAsync.when(
+        data: (data) => DefaultTabController(
+          length: 2,
+          child: Column(
+            children: [
+              TabBar(
+                labelColor: Theme.of(context).colorScheme.primary,
+                unselectedLabelColor:
+                    Theme.of(context).textTheme.bodySmall?.color,
+                indicatorColor: Theme.of(context).colorScheme.primary,
+                tabs: [
+                  Tab(text: l10n.translate('profileAccountTab')),
+                  Tab(text: l10n.translate('profileEntityTab')),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: TabBarView(
+                  children: const [_AccountInfoTab(), _EntityInfoTab()],
                 ),
-                Expanded(
-                  child: TabBarView(
-                    children: [const _AccountInfoTab(), _EntityInfoTab()],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) =>
-              const Center(child: Text('حدث خطأ في تحميل البيانات')),
         ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) =>
+            Center(child: Text(l10n.translate('profileLoadError'))),
       ),
     );
   }
@@ -121,162 +154,169 @@ class ProfilePage extends ConsumerWidget {
 class _AccountInfoTab extends ConsumerWidget {
   const _AccountInfoTab();
 
+  String _valueOrFallback(String? value, String fallback) {
+    if (value == null || value.trim().isEmpty || value == 'null') {
+      return fallback;
+    }
+    return value;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final basic = ref.watch(userProfileProvider).value ?? {};
     final full = ref.watch(userFullProfileProvider).value ?? {};
 
-    final role = (full['role'] ?? full['person_type'] ?? '-').toString();
-    final phone = (full['jwal'] ?? full['phone'] ?? '-').toString();
-    final address = (full['address'] ?? '-').toString();
-    final region = (full['Region']?['name'] ?? full['region']?['name'] ?? '-')
-        .toString();
-    final city = (full['City']?['name'] ?? full['city']?['name'] ?? '-')
-        .toString();
-    final status = (full['active'] ?? full['status'] ?? '-').toString();
-    final createdAt = (full['createdAt'] ?? full['created_at'] ?? '-')
-        .toString();
+    final role = _valueOrFallback(
+      (full['role'] ?? full['person_type'])?.toString(),
+      l10n.translate('notAvailable'),
+    );
+    final phone = _valueOrFallback(
+      (full['jwal'] ?? full['phone'])?.toString(),
+      l10n.translate('notAvailable'),
+    );
+    final address = _valueOrFallback(
+      (full['address'] ?? '')?.toString(),
+      l10n.translate('notAvailable'),
+    );
+    final region = _valueOrFallback(
+      (full['Region']?['name'] ?? full['region']?['name'] ?? '')?.toString(),
+      l10n.translate('notAvailable'),
+    );
+    final city = _valueOrFallback(
+      (full['City']?['name'] ?? full['city']?['name'] ?? '')?.toString(),
+      l10n.translate('notAvailable'),
+    );
+    final status = _valueOrFallback(
+      (full['active'] ?? full['status'])?.toString(),
+      l10n.translate('notAvailable'),
+    );
+    final createdAt = _valueOrFallback(
+      (full['createdAt'] ?? full['created_at'])?.toString(),
+      l10n.translate('notAvailable'),
+    );
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _InfoCard(
-          title: 'اسم المستخدم',
-          value: basic['userName'] ?? 'غير محدد',
+          title: l10n.translate('profileUserName'),
+          value: _valueOrFallback(
+            basic['userName'],
+            l10n.translate('notAvailable'),
+          ),
           icon: Icons.person_outline,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'البريد الإلكتروني',
-          value: basic['userEmail'] ?? 'غير محدد',
+          title: l10n.translate('profileEmail'),
+          value: _valueOrFallback(
+            basic['userEmail'],
+            l10n.translate('notAvailable'),
+          ),
           icon: Icons.email_outlined,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'الدور/الصفة',
-          value: role.isEmpty ? '-' : role,
+          title: l10n.translate('profileRole'),
+          value: role,
           icon: Icons.verified_user_outlined,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'رقم الجوال',
-          value: phone.isEmpty ? '-' : phone,
+          title: l10n.translate('profilePhone'),
+          value: phone,
           icon: Icons.phone_android_outlined,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'العنوان',
-          value: address.isEmpty ? '-' : address,
+          title: l10n.translate('profileAddress'),
+          value: address,
           icon: Icons.home_outlined,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'المنطقة',
-          value: region.isEmpty ? '-' : region,
+          title: l10n.translate('profileRegion'),
+          value: region,
           icon: Icons.map_outlined,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'المدينة',
-          value: city.isEmpty ? '-' : city,
+          title: l10n.translate('profileCity'),
+          value: city,
           icon: Icons.location_city_outlined,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'نوع الهوية',
-          value: basic['identificationType'] ?? '-',
+          title: l10n.translate('profileIdType'),
+          value: _valueOrFallback(
+            basic['identificationType'],
+            l10n.translate('notAvailable'),
+          ),
           icon: Icons.badge_outlined,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'رقم الهوية',
-          value: basic['identificationNumber'] ?? '-',
+          title: l10n.translate('profileIdNumber'),
+          value: _valueOrFallback(
+            basic['identificationNumber'],
+            l10n.translate('notAvailable'),
+          ),
           icon: Icons.confirmation_number_outlined,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'حالة الحساب',
-          value: status.isEmpty ? '-' : status,
+          title: l10n.translate('profileStatus'),
+          value: status,
           icon: Icons.shield_moon_outlined,
         ),
         const SizedBox(height: 12),
         _InfoCard(
-          title: 'تاريخ الإنشاء',
-          value: createdAt.split('T').first,
-          icon: Icons.calendar_today_outlined,
-        ),
-        const SizedBox(height: 20),
-        Card(
-          color: Colors.red.shade50,
-          child: ListTile(
-            leading: Icon(Icons.logout, color: Colors.red),
-            title: const Text(
-              'تسجيل الخروج',
-              style: TextStyle(color: Colors.red),
-            ),
-            onTap: () async {
-              final shouldLogout = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('تسجيل الخروج'),
-                  content: const Text('هل أنت متأكد من تسجيل الخروج؟'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
-                      child: const Text('إلغاء'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(true),
-                      child: const Text(
-                        'تسجيل الخروج',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-              if (shouldLogout == true && context.mounted) {
-                final repository = AuthRepository();
-                await repository.logout();
-                if (context.mounted) {
-                  Navigator.of(
-                    context,
-                  ).pushNamedAndRemoveUntil(Routes.login, (route) => false);
-                }
-              }
-            },
-          ),
+          title: l10n.translate('profileCreatedAt'),
+          value: createdAt,
+          icon: Icons.calendar_month_outlined,
         ),
       ],
     );
   }
 }
 
-class _EntityInfoTab extends StatelessWidget {
+class _EntityInfoTab extends ConsumerWidget {
   const _EntityInfoTab();
 
+  String _valueOrFallback(String? value, String fallback) {
+    if (value == null || value.trim().isEmpty || value == 'null') {
+      return fallback;
+    }
+    return value;
+  }
+
   @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final data = ref.watch(userProfileProvider).value ?? {};
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _InfoCard(
-              title: 'نوع الهوية',
-              value: (data['identificationType'] ?? 'غير محدد'),
-              icon: Icons.badge_outlined,
-            ),
-            const SizedBox(height: 12),
-            _InfoCard(
-              title: 'رقم الهوية',
-              value: (data['identificationNumber'] ?? 'غير محدد'),
-              icon: Icons.confirmation_number_outlined,
-            ),
-          ],
-        );
-      },
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final data = ref.watch(userProfileProvider).value ?? {};
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _InfoCard(
+          title: l10n.translate('profileIdType'),
+          value: _valueOrFallback(
+            data['identificationType'],
+            l10n.translate('notAvailable'),
+          ),
+          icon: Icons.badge_outlined,
+        ),
+        const SizedBox(height: 12),
+        _InfoCard(
+          title: l10n.translate('profileIdNumber'),
+          value: _valueOrFallback(
+            data['identificationNumber'],
+            l10n.translate('notAvailable'),
+          ),
+          icon: Icons.confirmation_number_outlined,
+        ),
+      ],
     );
   }
 }
@@ -294,30 +334,29 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final titleStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+    );
+    final valueStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.bold,
+    );
+
     return Card(
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(icon, color: Colors.green),
+            Icon(icon, color: theme.colorScheme.primary),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
+                  Text(title, style: titleStyle),
                   const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text(value, style: valueStyle),
                 ],
               ),
             ),
@@ -327,5 +366,3 @@ class _InfoCard extends StatelessWidget {
     );
   }
 }
-
-// تمت إزالة تبويب عرض "كل البيانات" وإظهار كل الحقول داخل تبويب بيانات الحساب

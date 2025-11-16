@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../../../core/theme/theme_mode.dart';
 import '../../auth/presentation/profile_page.dart';
 import 'admin_providers.dart';
 
@@ -10,6 +12,110 @@ final adminUserNameProvider = FutureProvider<String?>((ref) async {
   final storage = SecureStorage();
   return await storage.readUserName();
 });
+
+Color _surfaceColor(BuildContext context, [double opacity = 1]) =>
+    Theme.of(context).colorScheme.surface.withOpacity(opacity);
+
+Color _surfaceVariantColor(BuildContext context, [double opacity = 1]) =>
+    Theme.of(context).colorScheme.surfaceVariant.withOpacity(opacity);
+
+Color _onSurfaceColor(BuildContext context, [double opacity = 1]) =>
+    Theme.of(context).colorScheme.onSurface.withOpacity(opacity);
+
+Color _onSurfaceVariantColor(BuildContext context, [double opacity = 1]) =>
+    Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(opacity);
+
+Color _outlineColor(BuildContext context, [double opacity = 1]) =>
+    Theme.of(context).colorScheme.outline.withOpacity(opacity);
+
+Color _shadowColor(BuildContext context,
+        {double light = 0.06, double dark = 0.38}) =>
+    Colors.black.withOpacity(
+      Theme.of(context).brightness == Brightness.dark ? dark : light,
+    );
+
+Color _cardSurfaceColor(
+  BuildContext context, {
+  double lightOpacity = 1,
+  double darkOpacity = 1,
+}) {
+  const cardColor = Color(0xFFF5F7FA);
+  return cardColor.withOpacity(lightOpacity);
+}
+
+Color _cardBorderColor(
+  BuildContext context, {
+  double lightOpacity = 0.25,
+  double darkOpacity = 0.25,
+}) {
+  return const Color(0xFFE2E8F0).withOpacity(lightOpacity);
+}
+
+BoxShadow _cardShadow(
+  BuildContext context, {
+  double light = 0.12,
+  double dark = 0.12,
+  double blur = 18,
+  Offset offset = const Offset(0, 10),
+}) {
+  return BoxShadow(
+    color: Colors.black.withOpacity(0.05),
+    blurRadius: blur,
+    offset: offset,
+  );
+}
+
+Widget _detailRow(
+  BuildContext context,
+  String label,
+  String value, {
+  double labelWidth = 110,
+}) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 8),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: _cardSurfaceColor(
+        context,
+        lightOpacity: 0.98,
+        darkOpacity: 0.32,
+      ),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(
+        color: _cardBorderColor(
+          context,
+          lightOpacity: 0.16,
+          darkOpacity: 0.42,
+        ),
+      ),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: labelWidth,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 12,
+                  color: _onSurfaceVariantColor(context, 0.8),
+                ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: _onSurfaceColor(context),
+                ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 class AdminMainPage extends StatefulWidget {
   const AdminMainPage({super.key});
@@ -31,6 +137,8 @@ class _AdminMainPageState extends State<AdminMainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: SafeArea(
@@ -38,45 +146,20 @@ class _AdminMainPageState extends State<AdminMainPage> {
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0.95),
-                Colors.white.withValues(alpha: 0.98),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                offset: const Offset(0, -4),
-                blurRadius: 20,
-                spreadRadius: 0,
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.08),
-              ),
-              BoxShadow(
-                offset: const Offset(0, 4),
-                blurRadius: 20,
-                spreadRadius: 0,
-                color: Colors.black.withValues(alpha: 0.06),
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(28),
             child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.95),
-                    Colors.white.withValues(alpha: 0.98),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
+              color: Colors.white,
               child: NavigationBar(
                 selectedIndex: _currentIndex,
                 onDestinationSelected: (index) {
@@ -85,9 +168,9 @@ class _AdminMainPageState extends State<AdminMainPage> {
                   });
                 },
                 height: 74,
-                elevation: 10,
-                backgroundColor: Colors.transparent,
-                indicatorColor: Colors.transparent,
+                elevation: 0,
+                backgroundColor: Colors.white,
+                indicatorColor: Colors.black.withOpacity(0.08),
                 labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
                 animationDuration: const Duration(milliseconds: 800),
                 surfaceTintColor: Colors.transparent,
@@ -97,45 +180,45 @@ class _AdminMainPageState extends State<AdminMainPage> {
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       height: 1.9,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: Colors.black,
                     );
                   }
                   return TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     height: 0.9,
-                    color: Colors.grey[700],
+                    color: const Color(0xFF6B7280),
                   );
                 }),
                 destinations: [
                   _ModernNavDestination(
                     icon: Icons.dashboard_outlined,
                     selectedIcon: Icons.dashboard,
-                    label: 'لوحة التحكم',
+                    label: l10n.translate('navDashboard'),
                     isSelected: _currentIndex == 0,
                   ),
                   _ModernNavDestination(
                     icon: Icons.people_outline,
                     selectedIcon: Icons.people,
-                    label: 'المستخدمون',
+                    label: l10n.translate('navUsers'),
                     isSelected: _currentIndex == 1,
                   ),
                   _ModernNavDestination(
                     icon: Icons.shopping_cart_outlined,
                     selectedIcon: Icons.shopping_cart,
-                    label: 'الطلبات',
+                    label: l10n.translate('navOrders'),
                     isSelected: _currentIndex == 2,
                   ),
                   _ModernNavDestination(
                     icon: Icons.analytics_outlined,
                     selectedIcon: Icons.analytics,
-                    label: 'التقارير',
+                    label: l10n.translate('navReports'),
                     isSelected: _currentIndex == 3,
                   ),
                   _ModernNavDestination(
                     icon: Icons.person_outline,
                     selectedIcon: Icons.person,
-                    label: 'الملف الشخصي',
+                    label: l10n.translate('navProfile'),
                     isSelected: _currentIndex == 4,
                   ),
                 ],
@@ -144,6 +227,8 @@ class _AdminMainPageState extends State<AdminMainPage> {
           ),
         ),
       ),
+      floatingActionButton: const ThemeModeToggleFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 }
@@ -163,18 +248,24 @@ Widget _chip(String text, Color color) {
   );
 }
 
-Widget _infoTile(String label, String value) {
+Widget _infoTile(BuildContext context, String label, String value) {
+  final colors = Theme.of(context).colorScheme;
+  final isDark = Theme.of(context).brightness == Brightness.dark;
   return Container(
     width: 170,
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: _surfaceVariantColor(context, isDark ? 0.6 : 0.92),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey[200]!),
+      border: Border.all(
+        color: isDark
+            ? colors.outlineVariant.withOpacity(0.4)
+            : colors.outline.withOpacity(0.12),
+      ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.03),
-          blurRadius: 8,
+          color: _shadowColor(context, light: 0.12, dark: 0.42),
+          blurRadius: 10,
           offset: const Offset(0, 2),
         ),
       ],
@@ -182,11 +273,20 @@ Widget _infoTile(String label, String value) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontSize: 11,
+                color: _onSurfaceVariantColor(context, 0.8),
+              ),
+        ),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: _onSurfaceColor(context),
+              ),
         ),
       ],
     ),
@@ -203,167 +303,264 @@ class _DashboardPage extends ConsumerWidget {
     final clientsAsync = ref.watch(adminClientsListProvider);
     final carriersAsync = ref.watch(adminCarriersListProvider);
     final ordersAsync = ref.watch(adminOrdersListProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('لوحة التحكم'),
+        title: Text(l10n.translate('adminDashboardTitle')),
         automaticallyImplyLeading: false,
       ),
       body: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              userNameAsync.when(
-                data: (name) => Text(
-                  'مرحباً بك ${name ?? ''}',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 32, 16, 32),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF0B1120), Color(0xFF111827)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
                 ),
-                loading: () => Text(
-                  'مرحباً بك',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                child: userNameAsync.when(
+                  data: (name) => Text(
+                    l10n.translate(
+                      'adminWelcome',
+                      params: {'name': name ?? ''},
+                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
-                ),
-                error: (_, __) => Text(
-                  'مرحباً بك',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  loading: () => Text(
+                    l10n.translate(
+                      'adminWelcome',
+                      params: {'name': ''},
+                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  error: (_, __) => Text(
+                    l10n.translate(
+                      'adminWelcome',
+                      params: {'name': ''},
+                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              // Stats Grid
-              if (suppliersAsync is AsyncData &&
-                  clientsAsync is AsyncData &&
-                  carriersAsync is AsyncData &&
-                  ordersAsync is AsyncData)
-                Column(
+              Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(36),
+                  ),
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 48),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _EnhancedStatCard(
-                            icon: Icons.store,
-                            title: 'إجمالي الموردين',
-                            value: (suppliersAsync.value?.length ?? 0)
-                                .toString(),
-                            subtitle:
-                                '${(suppliersAsync.value ?? []).where((s) => s['active'] == 'active').length} نشط',
-                            color: Colors.blue,
+                    if (suppliersAsync is AsyncData &&
+                        clientsAsync is AsyncData &&
+                        carriersAsync is AsyncData &&
+                        ordersAsync is AsyncData)
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _EnhancedStatCard(
+                                  icon: Icons.store,
+                                  title: l10n
+                                      .translate('adminStatSuppliersTitle'),
+                                  value: (suppliersAsync.value?.length ?? 0)
+                                      .toString(),
+                                  subtitle: l10n.translate(
+                                    'adminStatSuppliersActive',
+                                    params: {
+                                      'count': (suppliersAsync.value ?? [])
+                                          .where((s) =>
+                                              s['active'] == 'active')
+                                          .length
+                                          .toString(),
+                                    },
+                                  ),
+                                  color: Colors.blue,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _EnhancedStatCard(
+                                  icon: Icons.shopping_cart,
+                                  title: l10n
+                                      .translate('adminStatBuyersTitle'),
+                                  value: (clientsAsync.value?.length ?? 0)
+                                      .toString(),
+                                  subtitle: l10n.translate(
+                                    'adminStatBuyersActive',
+                                    params: {
+                                      'count': (clientsAsync.value ?? [])
+                                          .where((c) =>
+                                              c['active'] == 'active')
+                                          .length
+                                          .toString(),
+                                    },
+                                  ),
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _EnhancedStatCard(
-                            icon: Icons.shopping_cart,
-                            title: 'إجمالي المشترين',
-                            value: (clientsAsync.value?.length ?? 0).toString(),
-                            subtitle:
-                                '${(clientsAsync.value ?? []).where((c) => c['active'] == 'active').length} نشط',
-                            color: Colors.green,
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _EnhancedStatCard(
+                                  icon: Icons.local_shipping,
+                                  title: l10n
+                                      .translate('adminStatCarriersTitle'),
+                                  value: (carriersAsync.value?.length ?? 0)
+                                      .toString(),
+                                  subtitle: l10n.translate(
+                                    'adminStatCarriersActive',
+                                    params: {
+                                      'count': (carriersAsync.value ?? [])
+                                          .where((c) =>
+                                              c['active'] == 'active')
+                                          .length
+                                          .toString(),
+                                    },
+                                  ),
+                                  color: Colors.orange,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _EnhancedStatCard(
+                                  icon: Icons.shopping_bag,
+                                  title: l10n
+                                      .translate('adminStatOrdersTitle'),
+                                  value: (ordersAsync.value?.length ?? 0)
+                                      .toString(),
+                                  subtitle: l10n.translate(
+                                    'adminStatOrdersCompleted',
+                                    params: {
+                                      'count': (ordersAsync.value ?? [])
+                                          .where((o) =>
+                                              o['status'] == 'completed')
+                                          .length
+                                          .toString(),
+                                    },
+                                  ),
+                                  color: Colors.purple,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _EnhancedStatCard(
-                            icon: Icons.local_shipping,
-                            title: 'إجمالي الناقلين',
-                            value: (carriersAsync.value?.length ?? 0)
-                                .toString(),
-                            subtitle:
-                                '${(carriersAsync.value ?? []).where((c) => c['active'] == 'active').length} نشط',
-                            color: Colors.orange,
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _EnhancedStatCard(
+                                  icon: Icons.hourglass_empty,
+                                  title: l10n.translate(
+                                    'adminStatOrdersInProgressTitle',
+                                  ),
+                                  value: (ordersAsync.value ?? [])
+                                      .where((o) =>
+                                          o['status'] == 'in_progress' ||
+                                          o['status'] == 'processing')
+                                      .length
+                                      .toString(),
+                                  subtitle: l10n.translate(
+                                    'adminStatOrdersPending',
+                                    params: {
+                                      'count': (ordersAsync.value ?? [])
+                                          .where((o) => o['status'] == 'pending')
+                                          .length
+                                          .toString(),
+                                    },
+                                  ),
+                                  color: Colors.orange,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _EnhancedStatCard(
+                                  icon: Icons.verified,
+                                  title: l10n.translate(
+                                    'adminStatSuppliersActiveTitle',
+                                  ),
+                                  value: (suppliersAsync.value ?? [])
+                                      .where((s) => s['active'] == 'active')
+                                      .length
+                                      .toString(),
+                                  subtitle: l10n.translate(
+                                    'adminStatSuppliersInactive',
+                                    params: {
+                                      'count': (suppliersAsync.value ?? [])
+                                          .where((s) =>
+                                              s['active'] == 'inactive')
+                                          .length
+                                          .toString(),
+                                    },
+                                  ),
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _EnhancedStatCard(
-                            icon: Icons.shopping_bag,
-                            title: 'إجمالي الطلبات',
-                            value: (ordersAsync.value?.length ?? 0).toString(),
-                            subtitle:
-                                '${(ordersAsync.value ?? []).where((o) => o['status'] == 'completed').length} مكتمل',
-                            color: Colors.purple,
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _OrderStatusChart(
+                                  orders: ordersAsync.value ?? [],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _ActivitySummary(
+                                  suppliers: suppliersAsync.value ?? [],
+                                  clients: clientsAsync.value ?? [],
+                                  carriers: carriersAsync.value ?? [],
+                                  orders: ordersAsync.value ?? [],
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _EnhancedStatCard(
-                            icon: Icons.hourglass_empty,
-                            title: 'الطلبات قيد التنفيذ',
-                            value:
-                                '${(ordersAsync.value ?? []).where((o) => o['status'] == 'in_progress' || o['status'] == 'processing').length}',
-                            subtitle:
-                                '${(ordersAsync.value ?? []).where((o) => o['status'] == 'pending').length} في الانتظار',
-                            color: Colors.orange,
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _TopRegions(
+                                  suppliers: suppliersAsync.value ?? [],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _RecentActivities(
+                                  orders: ordersAsync.value ?? [],
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _EnhancedStatCard(
-                            icon: Icons.verified,
-                            title: 'الموردين النشطين',
-                            value:
-                                '${(suppliersAsync.value ?? []).where((s) => s['active'] == 'active').length}',
-                            subtitle:
-                                '${(suppliersAsync.value ?? []).where((s) => s['active'] == 'inactive').length} غير نشط',
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // Charts Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _OrderStatusChart(
-                            orders: ordersAsync.value ?? [],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ActivitySummary(
-                            suppliers: suppliersAsync.value ?? [],
-                            clients: clientsAsync.value ?? [],
-                            carriers: carriersAsync.value ?? [],
-                            orders: ordersAsync.value ?? [],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // Bottom Row - Regions and Recent Activities
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _TopRegions(
-                            suppliers: suppliersAsync.value ?? [],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _RecentActivities(
-                            orders: ordersAsync.value ?? [],
-                          ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
+              ),
             ],
           ),
         ),
@@ -443,7 +640,9 @@ class _EnhancedStatCard extends StatelessWidget {
             subtitle,
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+            ).textTheme.bodySmall?.copyWith(
+                  color: _onSurfaceVariantColor(context, 0.7),
+                ),
           ),
         ],
       ),
@@ -469,9 +668,11 @@ class _OrderStatusChart extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _cardSurfaceColor(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: _cardBorderColor(context),
+          ),
         ),
         child: const Center(child: Text('لا توجد بيانات')),
       );
@@ -507,14 +708,10 @@ class _OrderStatusChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardSurfaceColor(context),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+          _cardShadow(context),
         ],
       ),
       child: Column(
@@ -603,14 +800,10 @@ class _ActivitySummary extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardSurfaceColor(context),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+          _cardShadow(context),
         ],
       ),
       child: Column(
@@ -647,7 +840,12 @@ class _ActivitySummary extends StatelessWidget {
             color: Colors.orange,
           ),
           const SizedBox(height: 16),
-          Divider(color: Colors.grey[300]),
+        Divider(
+          color: _outlineColor(
+            context,
+            Theme.of(context).brightness == Brightness.dark ? 0.45 : 0.2,
+          ),
+        ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -740,11 +938,15 @@ class _TopRegions extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _cardSurfaceColor(context,
+              lightOpacity: 0.8, darkOpacity: 0.8),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: _cardBorderColor(context,
+                lightOpacity: 0.18, darkOpacity: 0.45),
+          ),
         ),
-        child: const Center(child: Text('لا توجد بيانات')),
+        child: Center(child: Text(context.l10n.translate('adminNoData'))),
       );
     }
 
@@ -753,11 +955,12 @@ class _TopRegions extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardSurfaceColor(context,
+            lightOpacity: 0.8, darkOpacity: 0.8),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: _shadowColor(context, light: 0.08, dark: 0.38),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -811,7 +1014,9 @@ class _TopRegions extends StatelessWidget {
                         Text(
                           '${region.value} مورد',
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(
+                                color: _onSurfaceVariantColor(context, 0.7),
+                              ),
                         ),
                       ],
                     ),
@@ -820,7 +1025,7 @@ class _TopRegions extends StatelessWidget {
                     '$percentage%',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
+              color: _onSurfaceVariantColor(context, 0.75),
                     ),
                   ),
                 ],
@@ -855,7 +1060,7 @@ class _RecentActivities extends StatelessWidget {
     }
   }
 
-  Color _getStatusColor(String? status) {
+  Color _getStatusColor(BuildContext context, String? status) {
     switch (status?.toLowerCase()) {
       case 'completed':
         return Colors.green;
@@ -868,7 +1073,7 @@ class _RecentActivities extends StatelessWidget {
       case 'cancelled':
         return Colors.red;
       default:
-        return Colors.grey;
+        return _onSurfaceVariantColor(context, 0.7);
     }
   }
 
@@ -880,9 +1085,15 @@ class _RecentActivities extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _cardSurfaceColor(context,
+              lightOpacity: 0.8, darkOpacity: 0.8),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: _outlineColor(
+              context,
+              Theme.of(context).brightness == Brightness.dark ? 0.45 : 0.18,
+            ),
+          ),
         ),
         child: const Center(child: Text('لا توجد نشاطات')),
       );
@@ -891,11 +1102,12 @@ class _RecentActivities extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardSurfaceColor(context,
+            lightOpacity: 0.82, darkOpacity: 0.82),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: _shadowColor(context, light: 0.08, dark: 0.38),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -914,7 +1126,7 @@ class _RecentActivities extends StatelessWidget {
           ...recentOrders.map((order) {
             final status = order['status']?.toString();
             final statusText = _getStatusText(status);
-            final statusColor = _getStatusColor(status);
+            final statusColor = _getStatusColor(context, status);
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -941,7 +1153,9 @@ class _RecentActivities extends StatelessWidget {
                         Text(
                           'من: ${order['supplier_name'] ?? 'غير محدد'}',
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(
+                                color: _onSurfaceVariantColor(context, 0.7),
+                              ),
                         ),
                       ],
                     ),
@@ -1146,15 +1360,11 @@ class _EntityList extends StatelessWidget {
           (it) => Container(
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _cardSurfaceColor(context),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: _cardBorderColor(context)),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
+                _cardShadow(context),
               ],
             ),
             child: ListTile(
@@ -1247,6 +1457,7 @@ class _EntityList extends StatelessWidget {
                                 children: [
                                   if ((it['email'] ?? '').toString().isNotEmpty)
                                     _infoTile(
+                                      context,
                                       'البريد الإلكتروني',
                                       '${it['email']}',
                                     ),
@@ -1254,19 +1465,23 @@ class _EntityList extends StatelessWidget {
                                       .toString()
                                       .isNotEmpty)
                                     _infoTile(
+                                      context,
                                       'الجوال',
                                       '${it['jwal'] ?? it['phone']}',
                                     ),
                                   if ((it['city'] ?? '').toString().isNotEmpty)
-                                    _infoTile('المدينة', '${it['city']}'),
+                                    _infoTile(context, 'المدينة',
+                                        '${it['city']}'),
                                   if ((it['region'] ?? '')
                                       .toString()
                                       .isNotEmpty)
-                                    _infoTile('المنطقة', '${it['region']}'),
+                                    _infoTile(context, 'المنطقة',
+                                        '${it['region']}'),
                                   if ((it['createdAt'] ?? '')
                                       .toString()
                                       .isNotEmpty)
                                     _infoTile(
+                                      context,
                                       'تاريخ الإنشاء',
                                       '${it['createdAt']}',
                                     ),
@@ -1310,42 +1525,10 @@ class _EntityList extends StatelessWidget {
                                 );
 
                                 return details.map(
-                                  (e) => Container(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: Colors.grey[200]!,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        SizedBox(
-                                          width: 110,
-                                          child: Text(
-                                            e.key,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            e.value,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  (e) => _detailRow(
+                                    context,
+                                    e.key,
+                                    e.value,
                                   ),
                                 );
                               })(),
@@ -1559,14 +1742,17 @@ class _OrdersPage extends ConsumerWidget {
                                                         runSpacing: 12,
                                                         children: [
                                                           _infoTile(
+                                                            context,
                                                             'الإجمالي',
                                                             total,
                                                           ),
                                                           _infoTile(
+                                                            context,
                                                             'التاريخ',
                                                             date.toString(),
                                                           ),
                                                           _infoTile(
+                                                            context,
                                                             'الحالة',
                                                             statusText,
                                                           ),
@@ -1576,7 +1762,14 @@ class _OrdersPage extends ConsumerWidget {
                                                         height: 12,
                                                       ),
                                                       Divider(
-                                                        color: Colors.grey[300],
+                                                        color: _outlineColor(
+                                                          context,
+                                                          Theme.of(context)
+                                                                      .brightness ==
+                                                                  Brightness.dark
+                                                              ? 0.4
+                                                              : 0.2,
+                                                        ),
                                                       ),
                                                       const SizedBox(
                                                         height: 12,
@@ -1668,61 +1861,10 @@ class _OrdersPage extends ConsumerWidget {
                                                               : order['items_count'],
                                                         );
                                                         return details.map(
-                                                          (e) => Container(
-                                                            margin:
-                                                                const EdgeInsets.only(
-                                                                  bottom: 8,
-                                                                ),
-                                                            padding:
-                                                                const EdgeInsets.all(
-                                                                  12,
-                                                                ),
-                                                            decoration: BoxDecoration(
-                                                              color:
-                                                                  Colors.white,
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    10,
-                                                                  ),
-                                                              border: Border.all(
-                                                                color: Colors
-                                                                    .grey[200]!,
-                                                              ),
-                                                            ),
-                                                            child: Row(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: [
-                                                                SizedBox(
-                                                                  width: 110,
-                                                                  child: Text(
-                                                                    e.key,
-                                                                    style: const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .grey,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(
-                                                                  width: 8,
-                                                                ),
-                                                                Expanded(
-                                                                  child: Text(
-                                                                    e.value,
-                                                                    style: const TextStyle(
-                                                                      fontSize:
-                                                                          14,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
+                                                          (e) => _detailRow(
+                                                            context,
+                                                            e.key,
+                                                            e.value,
                                                           ),
                                                         );
                                                       })(),
@@ -1739,21 +1881,15 @@ class _OrdersPage extends ConsumerWidget {
                                           bottom: 8,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: _cardSurfaceColor(context),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                           border: Border.all(
-                                            color: Colors.grey[200]!,
+                                            color: _cardBorderColor(context),
                                           ),
                                           boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.03,
-                                              ),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
-                                            ),
+                                            _cardShadow(context),
                                           ],
                                         ),
                                         child: ListTile(
@@ -1917,18 +2053,21 @@ class _OrdersPage extends ConsumerWidget {
                                                         children: [
                                                           if (price != '-')
                                                             _infoTile(
+                                                              context,
                                                               'السعر',
                                                               price.toString(),
                                                             ),
                                                           if (status !=
                                                               'غير محدد')
                                                             _infoTile(
+                                                              context,
                                                               'الحالة',
                                                               status.toString(),
                                                             ),
                                                           if (p['description'] !=
                                                               null)
                                                             _infoTile(
+                                                              context,
                                                               'الوصف',
                                                               p['description']
                                                                   .toString(),
@@ -1939,7 +2078,14 @@ class _OrdersPage extends ConsumerWidget {
                                                         height: 12,
                                                       ),
                                                       Divider(
-                                                        color: Colors.grey[300],
+                                                        color: _outlineColor(
+                                                          context,
+                                                          Theme.of(context)
+                                                                      .brightness ==
+                                                                  Brightness.dark
+                                                              ? 0.4
+                                                              : 0.2,
+                                                        ),
                                                       ),
                                                       const SizedBox(
                                                         height: 12,
@@ -2015,61 +2161,10 @@ class _OrdersPage extends ConsumerWidget {
                                                           p['updatedAt'],
                                                         );
                                                         return details.map(
-                                                          (e) => Container(
-                                                            margin:
-                                                                const EdgeInsets.only(
-                                                                  bottom: 8,
-                                                                ),
-                                                            padding:
-                                                                const EdgeInsets.all(
-                                                                  12,
-                                                                ),
-                                                            decoration: BoxDecoration(
-                                                              color:
-                                                                  Colors.white,
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    10,
-                                                                  ),
-                                                              border: Border.all(
-                                                                color: Colors
-                                                                    .grey[200]!,
-                                                              ),
-                                                            ),
-                                                            child: Row(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: [
-                                                                SizedBox(
-                                                                  width: 110,
-                                                                  child: Text(
-                                                                    e.key,
-                                                                    style: const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .grey,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(
-                                                                  width: 8,
-                                                                ),
-                                                                Expanded(
-                                                                  child: Text(
-                                                                    e.value,
-                                                                    style: const TextStyle(
-                                                                      fontSize:
-                                                                          14,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
+                                                          (e) => _detailRow(
+                                                            context,
+                                                            e.key,
+                                                            e.value,
                                                           ),
                                                         );
                                                       })(),
@@ -2086,21 +2181,15 @@ class _OrdersPage extends ConsumerWidget {
                                           bottom: 8,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: _cardSurfaceColor(context),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                           border: Border.all(
-                                            color: Colors.grey[200]!,
+                                            color: _cardBorderColor(context),
                                           ),
                                           boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.03,
-                                              ),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
-                                            ),
+                                            _cardShadow(context),
                                           ],
                                         ),
                                         child: ListTile(
@@ -2606,6 +2695,15 @@ class _ReportCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final badgeBackground =
+        isDark ? colors.surface.withOpacity(0.9) : Colors.white;
+    final buttonBackground =
+        isDark ? colors.surface.withOpacity(0.95) : Colors.white;
+    final buttonTextColor = isDark ? colors.onSurface : color;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2638,7 +2736,7 @@ class _ReportCategoryCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: badgeBackground,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -2658,13 +2756,18 @@ class _ReportCategoryCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
           Expanded(
             child: Text(
               description,
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 11,
+                color: _onSurfaceVariantColor(context, 0.75),
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -2679,16 +2782,18 @@ class _ReportCategoryCard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: buttonBackground,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: color.withValues(alpha: isDark ? 0.4 : 0.3),
+                  ),
                 ),
                 child: Text(
                   'عرض التقارير',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: color,
+                    color: buttonTextColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -2814,17 +2919,25 @@ class _RecentReportCard extends StatelessWidget {
                         spacing: 12,
                         runSpacing: 12,
                         children: [
-                          _infoTile('الإجمالي', total),
-                          _infoTile('التاريخ', date.toString()),
-                          _infoTile('الحالة', statusText),
+                          _infoTile(context, 'الإجمالي', total),
+                          _infoTile(context, 'التاريخ', date.toString()),
+                          _infoTile(context, 'الحالة', statusText),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Divider(color: Colors.grey[300]),
+                      Divider(
+                        color: _outlineColor(
+                          context,
+                          Theme.of(context).brightness == Brightness.dark
+                              ? 0.4
+                              : 0.2,
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       // عرض تفاصيل مختارة بعناوين عربية واضحة
                       ...(() {
-                        final List<MapEntry<String, String>> details = [];
+                        final List<MapEntry<String, String>> details =
+                            [];
                         void add(String label, dynamic value) {
                           final v = (value == null) ? '' : value.toString();
                           if (v.trim().isEmpty || v == '-' || v == 'null')
@@ -2863,39 +2976,10 @@ class _RecentReportCard extends StatelessWidget {
                         );
 
                         return details.map(
-                          (e) => Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey[200]!),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 110,
-                                  child: Text(
-                                    e.key,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    e.value,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          (e) => _detailRow(
+                            context,
+                            e.key,
+                            e.value,
                           ),
                         );
                       })(),
@@ -2911,15 +2995,11 @@ class _RecentReportCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _cardSurfaceColor(context),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: _cardBorderColor(context)),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
+            _cardShadow(context),
           ],
         ),
         child: Row(
@@ -3182,7 +3262,7 @@ class _SuppliersReportsPage extends ConsumerWidget {
                                   title: 'إجمالي الموردين',
                                   value: total.toString(),
                                   progress: 1.0,
-                                  color: Colors.blue,
+                                  color: Colors.white,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -3933,4 +4013,27 @@ class _ModernNavDestination extends StatelessWidget {
       label: label,
     );
   }
+}
+
+class _BottomWaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, 40);
+    final controlPoint = Offset(size.width * 0.5, 0);
+    final endPoint = Offset(size.width, 80);
+    path.quadraticBezierTo(
+      controlPoint.dx,
+      controlPoint.dy,
+      endPoint.dx,
+      endPoint.dy,
+    );
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
